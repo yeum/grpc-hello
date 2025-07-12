@@ -1,0 +1,16 @@
+# Go
+bin/
+*.exe
+*.test
+*.out
+
+# Go workspace stuff
+go.sum
+
+# Protobuf generated files (optional)
+*.pb.go
+
+# IDE/editor settings
+.vscode/
+.idea/
+.DS_Store
