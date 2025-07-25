@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package match;
+
+option go_package = "/proto";
+
+message JoinRequest {
+    string user_id = 1;
+}
+
+message JoinResponse {
+    string match_id = 1;
+    string opponent_id = 2;
+    bool is_matched = 3;
+}
+
+service MatchmakingService {
+    rpc JoinQueue(JoinRequest) returns (JoinResponse);
+}
