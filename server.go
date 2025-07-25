@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net"
+	"sync"
 
 	pb "grpc-hello/proto"	// go_package = "/proto" 설정 기준
 
@@ -20,9 +21,13 @@ func (s *helloServer) SayHello(ctx context.Context, req *pb.HelloRequest) (*pb.H
 
 type Matchmaker struct {
 	queue []string
+	mu sync.Mutex
 }
 
 func (m *Matchmaker) Join(userId string) (isMatched bool, opponentId string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	
 	m.queue = append(m.queue, userId)
 
 	if len(m.queue) >= 2 {
