@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"time"
+	"os"
 
 	pb "grpc-hello/proto"
 
@@ -20,11 +21,13 @@ func main() {
 	helloClient := pb.NewHelloServiceClient(conn)
 	matchClient := pb.NewMatchmakingServiceClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	userId := os.Args[1]
+
 	{
-		res, err := helloClient.SayHello(ctx, &pb.HelloRequest{Name: "Hyerin"})
+		res, err := helloClient.SayHello(ctx, &pb.HelloRequest{Name: userId})
 		if err != nil {
 			log.Fatalf("could not greet: %v", err)
 		}
@@ -32,7 +35,7 @@ func main() {
 		log.Printf("Greeting: %s", res.GetMessage())
 	}
 	{
-		res, err := matchClient.JoinQueue(ctx, &pb.JoinRequest{UserId: "Hyerin"})
+		res, err := matchClient.JoinQueue(ctx, &pb.JoinRequest{UserId: userId})
 		if err != nil {
 			log.Fatalf("could not join: %v", err)
 		}

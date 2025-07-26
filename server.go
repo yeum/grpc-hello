@@ -9,6 +9,7 @@ import (
 	pb "grpc-hello/proto"	// go_package = "/proto" 설정 기준
 
 	"google.golang.org/grpc"
+	"github.com/google/uuid"
 )
 
 type helloServer struct {
@@ -19,16 +20,12 @@ func (s *helloServer) SayHello(ctx context.Context, req *pb.HelloRequest) (*pb.H
 	return &pb.HelloResponse{Message: "Hello, " + req.Name + "!"}, nil
 }
 
-type Matchmaker struct {
-	queue []string
-	mu sync.Mutex
-}
-
-func (m *Matchmaker) Join(userId string) (isMatched bool, opponentId string) {
+func (m *Matchmaker) Join(ctx context.Context, userId string) (*pb.JoinResponse, error) {
 	m.mu.Lock()
-	defer m.mu.Unlock()
-	
+
+	ch := make(chan *pb.JoinResponse)
 	m.queue = append(m.queue, userId)
+	m.waiters[userId] = ch
 
 	if len(m.queue) >= 2 {
 		// matching
@@ -36,39 +33,51 @@ func (m *Matchmaker) Join(userId string) (isMatched bool, opponentId string) {
 		user2 := m.queue[1]
 		m.queue = m.queue[2:]
 
-		if userId == user1 {
-			return true, user2
-		}
-		return true, user1
+		matchId := uuid.New().String()
+		res1 := &pb.JoinResponse{MatchId: matchId, OpponentId: user2, IsMatched: true}
+		res2 := &pb.JoinResponse{MatchId: matchId, OpponentId: user1, IsMatched: true}
+
+		ch1 := m.waiters[user1]
+		ch2 := m.waiters[user2]
+		go func() {
+			ch1 <- res1
+			ch2 <- res2
+		}()
 	}
-	return false, ""
+
+	m.mu.Unlock()
+	
+	select {
+	case res := <-ch:
+		return res, nil
+	case <-ctx.Done():
+		m.mu.Lock()
+		delete(m.waiters, userId)
+		m.mu.Unlock()
+		return nil, ctx.Err()
+	}
 }
 
-type matchServer struct {
+type MatchServer struct {
 	pb.UnimplementedMatchmakingServiceServer
 	matchmaker *Matchmaker
+}
+
+type Matchmaker struct {
+	queue []string
+	waiters map[string]chan *pb.JoinResponse
+	mu sync.Mutex
 }
 
 func NewMatchmaker() *Matchmaker {
 	return &Matchmaker{
 		queue: make([]string, 0),
+		waiters: make(map[string]chan *pb.JoinResponse),
 	}
 }
 
-func (s *matchServer) JoinQueue(ctx context.Context, req *pb.JoinRequest) (*pb.JoinResponse, error) {
-	isMatched, opponentId := s.matchmaker.Join(req.UserId)
-	if isMatched {
-		return &pb.JoinResponse{
-			MatchId: "match_1", 
-			OpponentId: opponentId,
-			IsMatched: true,
-			}, nil		
-	}
-	return &pb.JoinResponse{
-		MatchId: "", 
-		OpponentId: "",
-		IsMatched: false,
-		}, nil	
+func (s *MatchServer) JoinQueue(ctx context.Context, req *pb.JoinRequest) (*pb.JoinResponse, error) {
+	return s.matchmaker.Join(ctx, req.UserId)
 }
 
 func main() {
@@ -80,7 +89,7 @@ func main() {
 	grpcServer := grpc.NewServer()
 	matchmaker := NewMatchmaker()
 	pb.RegisterHelloServiceServer(grpcServer, &helloServer{})
-	pb.RegisterMatchmakingServiceServer(grpcServer, &matchServer{
+	pb.RegisterMatchmakingServiceServer(grpcServer, &MatchServer{
 		matchmaker: matchmaker,
 	})
 
