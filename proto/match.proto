@@ -14,6 +14,20 @@ message JoinResponse {
     bool is_matched = 3;
 }
 
+message BattleResultRequest {
+    string match_id = 1;
+}
+
+message BattleResultResponse {
+    string match_id = 1;
+    string player1 = 2;
+    string player2 = 3;
+    string winner = 4;
+    int32 turns = 5;
+}
+
 service MatchmakingService {
     rpc JoinQueue(JoinRequest) returns (JoinResponse);
+    rpc GetBattleResult(BattleResultRequest) returns (BattleResultResponse);
 }
+

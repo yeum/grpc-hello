@@ -10,6 +10,8 @@ import (
 	pb "grpc-hello/proto"	// go_package = "/proto" 설정 기준
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
+    "google.golang.org/grpc/codes"
 	"github.com/google/uuid"
 )
 
@@ -45,7 +47,12 @@ func (m *Matchmaker) Join(ctx context.Context, userId string) (*pb.JoinResponse,
 			ch2 <- res2
 		}()
 
-		go StartBattle(matchId, user1, user2)
+		go func() {
+			battleResult := StartBattle(matchId, user1, user2)
+			m.mu.Lock()
+			m.battleResults[matchId] = battleResult
+			m.mu.Unlock()
+		}()
 	}
 
 	m.mu.Unlock()
@@ -77,6 +84,7 @@ func NewMatchmaker() *Matchmaker {
 	return &Matchmaker{
 		queue: make([]string, 0),
 		waiters: make(map[string]chan *pb.JoinResponse),
+		battleResults: make(map[string]*BattleResult),
 	}
 }
 
@@ -103,16 +111,16 @@ func StartBattle(matchId, user1, user2 string) *BattleResult {
 		{UserId: user1, Hp: 100}, 
 		{UserId: user2, Hp: 100},
 	}
-	isNeededShuffle = bool(rand.Intn(2))
+	isNeededShuffle := rand.Intn(2)
 	if isNeededShuffle == 1 {
 		players[0], players[1] = players[1], players[0]
 	}
 	var attacker Player
-	for player1.Hp > 0 && player2.Hp > 0 {
+	for players[0].Hp > 0 && players[1].Hp > 0 {
 		attacker = players[turns%2]
 		damage := rand.Intn(21) + 10 // 10~30
-		opponent := players[(turns+1)%2]
-		opponent.Hp -= damage
+		players[(turns+1)%2].Hp -= damage
+		turns += 1
 	}
 
 	return &BattleResult{
@@ -122,6 +130,21 @@ func StartBattle(matchId, user1, user2 string) *BattleResult {
 		Winner: attacker.UserId,
 		Turns: turns+1,
 	}
+}
+
+func (s *MatchServer) GetBattleResult(ctx context.Context, req *pb.BattleResultRequest) (*pb.BattleResultResponse, error) {
+	battleResult, ok := s.matchmaker.battleResults[req.MatchId]
+	if !ok {
+		log.Printf("Battle result not found for matchId: %s", req.MatchId)
+		return nil, status.Errorf(codes.NotFound, "Battle result not found for matchId: %s", req.MatchId)
+	}
+	return &pb.BattleResultResponse{
+		MatchId: battleResult.MatchId,
+		Player1: battleResult.Player1,
+		Player2: battleResult.Player2,
+		Winner: battleResult.Winner,
+		Turns: int32(battleResult.Turns),
+	}, nil
 }
 
 func main() {
