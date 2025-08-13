@@ -32,12 +32,16 @@ logic.
     │   ├── main.go         
     │   └── Dockerfile
     ├── client/             # Simple CLI gRPC client
-    │   └── main.go
+    │   ├── main.go 
+    │   └── Dockerfile
     ├── go.mod / go.sum
+    ├── docker-compose.yaml
+    └── README.md
 
 ## 🚀 Getting Started
 
-### Build & Run (server)
+### Option A - Local (Server in Docker, Client on host)
+#### Build & Run (server)
 
 ``` bash
 docker build -t grpc-hello-server -f server/Dockerfile .
@@ -52,12 +56,18 @@ go run client/main.go UserA
 
 > Note: Run twice (with different user IDs) to simulate a full match.
 
+### Option B - Docker Compose (Server + Multiple Clients)
+#### Up (build & run)
+
+``` bash
+docker compose up --build -d
+```
 ------------------------------------------------------------------------
 
 ## 📌 TODO (WIP)
 
--   [ ] Add Dockerfile for client
--   [ ] Add `docker-compose.yml`
+-   [x] Add Dockerfile for client
+-   [x] Add `docker-compose.yml`
 -   [ ] Migrate deployment to Kubernetes
 -   [ ] Add Prometheus + Grafana metrics
 -   [ ] Add CI/CD pipeline with GitHub Actions
