@@ -15,7 +15,11 @@ import (
 )
 
 func main() {
-	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
+	addr := os.Getenv("SERVER_ADDR")
+	if addr == "" {
+		addr = "localhost:50051"
+	}
+	conn, err := grpc.Dial(addr, grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
