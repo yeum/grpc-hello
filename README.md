@@ -1,19 +1,21 @@
-# Real-Time Matchmaking & Battle Simulator
+# Real-Time 2D RPG Sample
 
-A backend prototype for simulating real-time 1v1 player battles using Go
-and gRPC. This project showcases the design of concurrent systems with
-blocking queues, context-based cancellation, and battle simulation
-logic.
+> Note: This project was initially a 1v1 battle simulator using Go and gRPC, 
+> and has now been expanded into a **2D RPG** with a Phaser frontend.
+
+A backend + frontend prototype for simulating real-time multiplayer
+gameplay. It showcases the design of concurrent systems, matchmaking
+queues, and integration between a Go backend and a web-based client.
 
 ## 🔧 Features
 
--   **1v1 Auto Matchmaking**: Players are automatically matched in pairs
-    through a blocking queue.
--   **Battle Simulation**: Randomized turn-based combat with HP, damage,
-    and win condition logic.
+-   **2D RPG Gameplay (Phaser)**: Tilemap-based map rendering with player
+    movement and camera follow.
+-   **Battle Logic**: Previously turn-based 1v1 simulation, now being
+    adapted into real-time RPG interactions.
 -   **gRPC API**:
-    -   `JoinQueue`: Enter matchmaking queue
-    -   `GetBattleResult`: Retrieve result by match ID
+    -   `JoinQueue`: Enter matchmaking queue (legacy)
+    -   `GetBattleResult`: Retrieve result by match ID (legacy)
 -   **Concurrency Management**: Channels, mutexes, and context handling
 -   **Dockerized**: Ready for containerized deployment
 
@@ -21,7 +23,8 @@ logic.
 
 -   Go 1.24+
 -   gRPC / Protocol Buffers
--   Docker
+-   Phaser 3 (frontend, via Vite)
+-   Docker / Docker Compose
 -   Context, Goroutines, Mutex, Channels
 
 ## 📁 Project Structure
@@ -31,9 +34,11 @@ logic.
     ├── server/             # gRPC backend server
     │   ├── main.go         
     │   └── Dockerfile
-    ├── client/             # Simple CLI gRPC client
-    │   ├── main.go 
-    │   └── Dockerfile
+    ├── client/             # Phaser 2D RPG client (Vite project)
+    │   ├── src/
+    │   ├── public/assets/
+    │   ├── package.json
+    │   └── vite.config.js
     ├── go.mod / go.sum
     ├── docker-compose.yaml
     └── README.md
@@ -48,29 +53,19 @@ docker build -t grpc-hello-server -f server/Dockerfile .
 docker run -d -p 50051:50051 --name grpc-hello grpc-hello-server
 ```
 
-### Run Client (locally)
+### Run Client (locally with Vite)
 
 ``` bash
-go run client/main.go UserA
+cd client
+npm install
+npm run dev
 ```
 
-> Note: Run twice (with different user IDs) to simulate a full match.
-
-### Option B - Docker Compose (Server + Multiple Clients)
-#### Up (build & run)
+### Option B - Docker Compose (Server + Client)
 
 ``` bash
 docker compose up --build -d
 ```
-------------------------------------------------------------------------
-
-## 📌 TODO (WIP)
-
--   [x] Add Dockerfile for client
--   [x] Add `docker-compose.yml`
--   [ ] Migrate deployment to Kubernetes
--   [ ] Add Prometheus + Grafana metrics
--   [ ] Add CI/CD pipeline with GitHub Actions
 
 ## 📃 License
 
@@ -81,7 +76,4 @@ MIT (feel free to fork or use)
 Hyerin Yeum\
 [GitHub Profile](https://github.com/yeum)
 
-------------------------------------------------------------------------
-
-> This project was created as part of a portfolio to demonstrate backend
-> system design with real-time constraints and DevOps readiness.
+---
