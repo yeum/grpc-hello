@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package session;
+
+option go_package = "/proto";
+
+service SessionService {
+    // Create a new session for the given user.
+    //
+    // Errors:
+    // - INVALID_ARGUMENT: user_id is empty
+    // - INTERNAL: failed to generate session
+    rpc CreateSession(CreateSessionRequest) returns (CreateSessionResponse);
+}
+
+message CreateSessionRequest {
+    string user_id = 1;
+}
+
+message CreateSessionResponse {
+    string session_id = 1;
+    uint32 char_num = 2;
+    int64 expires_at = 3;
+    int64 location_x = 4;
+    int64 location_y = 5;
+}
+

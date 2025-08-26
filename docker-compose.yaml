@@ -6,29 +6,5 @@ services:
     container_name: grpc-hello-server
     ports:
       - "50051:50051"
-    
-  clienta:
-    build:
-      context: .
-      dockerfile: client/Dockerfile
-    container_name: grpc-client-a
-    environment:
-      - SERVER_ADDR=server:50051
-    depends_on:
-      - server
-    command: ['/app/client', "UserA"]
-    entrypoint: ["/bin/sh", "-c", "sleep 1 && exec \"$@\"", "--"] # to wait for server
-
-  clientb:
-    build:
-      context: .
-      dockerfile: client/Dockerfile
-    container_name: grpc-client-b
-    environment:
-      - SERVER_ADDR=server:50051
-    depends_on:
-      - server
-    command: ['/app/client', "UserB"]
-    entrypoint: ["/bin/sh", "-c", "sleep 1 && exec \"$@\"", "--"] # to wait for server
   
       

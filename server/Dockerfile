@@ -8,8 +8,13 @@ RUN go mod download
 COPY proto proto
 COPY server/server.go .
 
-# RUN protoc --go_out=. --go-grpc_out=. proto/*.proto
+RUN CGO_ENABLED=0 GOOS=linux go build -0 /server ./server
 
 RUN go build -o server server.go
 
-CMD ["./server"]
+#Run time
+FROM gcr.io/distroless/base-debian12
+COPY --from=build /server /server
+EXPOSE 50051
+USER nonroot:nonroot
+ENTRYPOINT [ "/server" ]
